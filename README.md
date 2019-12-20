@@ -1,5 +1,7 @@
 # Enhanced Stand-off TEI Annotation with StoReCo: A generic approach with the use of RDF.
 
+Author: Daniel Schlager "email at danielschlager.at"
+
 ## Abstract
 
 The Text Encoding Initiative (TEI) is the de facto standard for the representation of texts in digital form, especially in the digital humanities of high standing due to its diverse application spectrum.

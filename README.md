@@ -12,11 +12,11 @@ With this technique, an unlimited number of annotation levels can be introduced.
 
 ## StoReCo CLI and Library
 
-Please see [https://github.com/KardungLa/StoReCo/storeco](https://github.com/KardungLa/StoReCo/storeco) for more about the StoReCo command line interface and Java Library.
+Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco](https://github.com/KardungLa/StoReCo/tree/master/storeco) for more about the StoReCo command line interface and Java Library.
 
 ## StoReCo UI
 
-Please see [https://github.com/KardungLa/StoReCo/storeco-ui](https://github.com/KardungLa/StoReCo/storeco-ui) for more about the User Interface.
+Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco-ui](https://github.com/KardungLa/StoReCo/tree/master/storeco-ui) for more about the User Interface.
 
 ## License
 

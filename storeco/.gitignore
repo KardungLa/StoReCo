@@ -4,6 +4,8 @@ checkouts
 profiles.clj
 pom.xml
 pom.xml.asc
+*.ttl
+*.xml
 *.jar
 *.class
 .lein-*

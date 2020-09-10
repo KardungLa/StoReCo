@@ -16,6 +16,7 @@
 
 (xml/alias-uri 'xmlns "http://www.w3.org/XML/1998/namespace")
 
+(rdf/register-rdf-ns :tei "http://www.tei-c.org/ns/1.0/")
 (rdf/register-rdf-ns :dhplus "https://dhplus.sbg.ac.at/ontologies#")
 (rdf/register-rdf-ns :dhplusi "https://dhplus.sbg.ac.at/instance/")
 (rdf/register-rdf-ns :ldp "http://www.w3.org/ns/ldp#")
@@ -27,6 +28,7 @@
 (def parent nil)
 (def i 0)
 (def stack (atom ()))
+(def istack (atom ()))
 
 (defn pop-head!
   [items]
@@ -36,17 +38,21 @@
   [value]
   (swap! stack conj value))
 
+(defn push-i-head!
+  [value]
+  (swap! istack conj value))
+
 (defn get-config []
   (m/build-config
-   (m/resource "config-defaults.edn")
-   (m/file "./config-local.edn")))
+    (m/resource "config-defaults.edn")
+    (m/file "./config-local.edn")))
 
 (defn read-and-parse-str
   "Read and parse xml string"
   [xml]
   (->
-   (-> xml .getBytes java.io.ByteArrayInputStream.)
-   (xml/parse :namespace-aware false)))
+    (-> xml .getBytes java.io.ByteArrayInputStream.)
+    (xml/parse :namespace-aware false)))
 
 (defn read-and-parse-file
   "Read and parse xml file"
@@ -54,14 +60,14 @@
   (cond
     (instance? java.io.File file) (let [f (.getAbsolutePath file)]
                                     (->>
-                                     (slurp f)
-                                     (xml/parse-str)))
+                                      (slurp f)
+                                      (xml/parse-str)))
 
     :else
     (if (.exists (io/file file))
       (->>
-       (slurp file)
-       (xml/parse-str))
+        (slurp file)
+        (xml/parse-str))
       nil)))
 
 (defn update-parent
@@ -72,7 +78,7 @@
 (defn increment-i
   "Update global variable i which holds the incremental counter for every element"
   []
-  (alter-var-root #'i (constantly (inc i))))
+  (do (alter-var-root #'i (constantly (inc i))) (push-i-head! i)) i)
 
 (defn get-xml-id
   "Get xml:id of element"
@@ -147,47 +153,28 @@
   [element]
   (let [ip parent]
     (cond
+      (string? element) (do (def tr-id (keyword (uuid)))
+                            (add-to-model [[[:dhplusi tr-id]
+                                            [:dhplus :i]
+                                            (increment-i)]] *model*)
+                            (add-to-model [[[:dhplusi tr-id]
+                                            [:rdf :type]
+                                            [:dhplus :contentTag]]] *model*)
+                            (add-to-model [[[:dhplusi tr-id]
+                                            [:dhplus :hasContent]
+                                            (get-content element)]] *model*))
       (sequential? element) (let [c (count element)]
                               (cond
                                 (= c 1) (do
-                                          (def tr-id (keyword (uuid)))
-                                          (add-to-model [[[:dhplusi tr-id]
-                                                          [:dhplus :i]
-                                                          (increment-i)]] *model*)
-                                          (add-to-model [[[:dhplusi tr-id]
-                                                          [:rdf :type]
-                                                          [:dhplus :endTag]]] *model*)
-                                          (add-to-model [[[:dhplusi tr-id]
-                                                          [:dhplus :elementName]
-                                                          [:dhplus (pop-head! stack)]]] *model*)
                                           (xml->rdf (first element)))
-                                (> c 1) (if (= c 3)
-                                          (do
-                                            (def tr-id (keyword (uuid)))
-                                            (add-to-model [[[:dhplusi tr-id]
-                                                            [:dhplus :i]
-                                                            (increment-i)]] *model*)
-                                            (add-to-model [[[:dhplusi tr-id]
-                                                            [:rdf :type]
-                                                            [:dhplus :contentTag]]] *model*)
-                                            (add-to-model [[[:dhplusi tr-id]
-                                                            [:dhplus :hasContent]
-                                                            (get-content element)]] *model*)
-                                            (xml->rdf (first (rest element))))
-                                          (do
+                                (> c 1) (do
+                                          (if (string? (first (rest element)))
                                             (xml->rdf (first (rest element)))
-                                            (doseq [el (rest (rest element))]
-                                              (xml->rdf el))
-                                            (def tr-id (keyword (uuid)))
-                                            (add-to-model [[[:dhplusi tr-id]
-                                                            [:dhplus :i]
-                                                            (increment-i)]] *model*)
-                                            (add-to-model [[[:dhplusi tr-id]
-                                                            [:rdf :type]
-                                                            [:dhplus :endTag]]] *model*)
-                                            (add-to-model [[[:dhplusi tr-id]
-                                                            [:dhplus :elementName]
-                                                            [:dhplus (pop-head! stack)]]] *model*)))))
+                                            (do (xml->rdf (first (rest element)))
+                                                (if (> (count (rest (rest element))) 1)
+                                                  (do
+                                                    (doseq [el (rest (rest element))]
+                                                      (xml->rdf el)))))))))
       (map? element) (do
                        (def tr-id (keyword (get-id element)))
                        (push-head! (get-tag element))
@@ -199,13 +186,13 @@
                                        [:dhplus :startTag]]] *model*)
                        (add-to-model [[[:dhplusi tr-id]
                                        [:dhplus :elementName]
-                                       [:dhplus (name (get-tag element))]]] *model*)
+                                       [:tei (name (get-tag element))]]] *model*)
                        (add-to-model [[[:dhplusi tr-id]
                                        [:dhplus :hasContent]
                                        (get-content element)]] *model*)
                        (if (:attrs element)
                          (do
-                           (if (> (count (:attrs element)) 1)
+                           (if (> (count (:attrs element)) 0)
                              (doseq [[k v] (:attrs element)]
                                (def nid (keyword (str (get-id element) "/" (name k))))
                                (add-to-model [[[:dhplusi tr-id]
@@ -217,29 +204,53 @@
                                (add-to-model [[[:dhplusi nid]
                                                [:dhplus :attrValue]
                                                v]] *model*)))))
-                       (xml->rdf (:content element))))))
+                       (if (:content element)
+                         (if (string? (:content element))
+                           (prn "mach nix")
+                           (do
+                             (xml->rdf (:content element))
+                             (def tr-id (keyword (uuid)))
+                             (add-to-model [[[:dhplusi tr-id]
+                                             [:dhplus :i]
+                                             (increment-i)]] *model*)
+                             (add-to-model [[[:dhplusi tr-id]
+                                             [:rdf :type]
+                                             [:dhplus :endTag]]] *model*)
+                             (add-to-model [[[:dhplusi tr-id]
+                                             [:dhplus :elementName]
+                                             [:tei (name (pop-head! stack))]]] *model*))))))))
 
 (defn build
-  "Build RDF from XML and save"
-  ([options]
-   (let [document (read-and-parse-file (:input options))
-         output (:output options)
-         format (:format options)]
-     (cond
-       (nil? document) (prn "File not found")
-       :else
-       (do
-         (def document (read-and-parse-file (:input options)))
-         (xml->rdf document)
-         (def o (with-out-str (rdf/model->format *model* (keyword format))))
-         (spit output o)))))
-  ([input output format]
-   (let [document (read-and-parse-file input)]
-     (cond
-       (nil? document) (prn "File not found")
-       :else
-       (do
-         (def document (read-and-parse-file input))
-         (xml->rdf document)
-         (def o (with-out-str (rdf/model->format *model* (keyword format))))
-         (spit output o))))))
+"Build RDF from XML and save"
+([options]
+ (let [document (read-and-parse-file (:input options))
+       output (:output options)
+       format (:format options)]
+   (cond
+     (nil? document) (prn "File not found")
+     :else
+     (do
+       (def document (read-and-parse-file (:input options)))
+       (xml->rdf document)
+       (def o (with-out-str (rdf/model->format *model* (keyword format))))
+       (spit output o)))))
+([input output format]
+ (let [document (read-and-parse-file input)]
+   (cond
+     (nil? document) (prn "File not found")
+     :else
+     (do
+       (def document (read-and-parse-file input))
+       (xml->rdf document)
+       (def o (with-out-str (rdf/model->format *model* (keyword format))))
+       (spit output o))))))
+
+(defn build-test []
+  (build "/Users/b1016906/Nextcloud/clojure/semtest/resources/AR.xml" "AR.ttl" "turtle"))
+
+(build-test)
+
+(defn build-test2 []
+  (build "/Users/b1016906/GitHub/StoReCo/storeco/test.xml" "test.ttl" "turtle"))
+
+(build-test2)

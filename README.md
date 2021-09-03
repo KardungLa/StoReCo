@@ -14,13 +14,13 @@ With this technique, an unlimited number of annotation levels can be introduced.
 
 Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco](https://github.com/KardungLa/StoReCo/tree/master/storeco) for more about the StoReCo command line interface and Java Library.
 
-## StoReCo UI
+## StoReCo UI (not published yet)
 
 Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco-ui](https://github.com/KardungLa/StoReCo/tree/master/storeco-ui) for more about the User Interface.
 
 ## License
 
-Copyright © 2020 Daniel Schlager 
+Copyright © 2020-2021 Daniel Schlager 
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at

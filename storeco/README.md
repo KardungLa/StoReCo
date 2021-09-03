@@ -2,27 +2,46 @@
 
 Enhanced Stand-off TEI Annotation with StoReCo: A generic approach with the use of RDF.
 
+This tool is still under development. Changes are possible at any time.
+
 ## Installation
 
 Download from https://github.com/KardungLa/StoReCo .
 
 ## Usage
 
-FIXME: explanation
+### How to use StoReCo
+<pre>
+java -jar storeco-0.2.0-SNAPSHOT-standalone.jar
+</pre>
 
-    $ java -jar storeco-0.1.0-standalone.jar [args]
+<pre>
+StoReCo
 
-## Options
+  Usage: storeco [options]
 
-## Examples
+  Options:
+  -h, --help
+  -c, --config PATH    EDN file to read config options from
+  -i, --input INPUT
+  -o, --output OUTPUT
+  -f, --format FORMAT  (turtle)
+  -r, --root-ns ROOT   https://storeco.org/text/
+  -w, --root-id ID     ALL
+</pre>
 
-...
+### Example
+<pre>
+java -jar storeco-0.2.0-SNAPSHOT-standalone.jar -i AZW.tei.xml -o AZW.ttl -f turtle -r https://storeco.org/text/ -w AZW
+</pre>
 
-### Bugs
+## Credits
+
+Thanks to Antonio Garrote for his awesome work on the [clj-plaza](https://github.com/antoniogarrote/clj-plaza) library .
 
 ## License
 
-Copyright © 2020 Daniel Schlager 
+Copyright © 2020-2021 Daniel Schlager 
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at

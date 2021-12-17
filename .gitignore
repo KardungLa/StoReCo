@@ -1,1 +1,6 @@
 target
+.lsp
+.clj-kondo
+.calva 
+.settings
+.project

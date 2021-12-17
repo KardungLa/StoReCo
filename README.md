@@ -18,6 +18,10 @@ Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco](https://gi
 
 Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco-ui](https://github.com/KardungLa/StoReCo/tree/master/storeco-ui) for more about the User Interface.
 
+## StoReCo Server (not published yet)
+
+Please see [https://github.com/KardungLa/StoReCo/tree/master/storeco-server](https://github.com/KardungLa/StoReCo/tree/master/storeco-server) for more about the Backend Service.
+
 ## License
 
 Copyright © 2020-2021 Daniel Schlager 

@@ -1,4 +1,4 @@
-(defproject storeco "0.2.0-SNAPSHOT"
+(defproject storeco "0.4.0"
   :description "Enhanced Stand-off TEI Annotation with StoReCo: A generic approach with the use of RDF."
   :url "https://github.com/KardungLa/StoReCo"
   :license {:name "EPL-2.0"
@@ -24,8 +24,9 @@
     [cheshire "5.10.0"]
     [enlive "1.1.6"]
     [metosin/maailma "1.1.0"]
+    [com.fzakaria/slf4j-timbre "0.3.21"]
     ]
-  :main at.danielschlager.storeco.core
+  :main io.storeco.core
   :target-path "target/%s"
   :jvm-opts ["-Xmx1g" "-server"]
   :profiles {:uberjar {:aot :all}})

@@ -6,13 +6,42 @@ This tool is still under development. Changes are possible at any time.
 
 ## Installation
 
-Download from https://github.com/KardungLa/StoReCo .
+StoReCo is written in [Clojure](https://clojure.org/) and uses [Leiningen](https://leiningen.org/) to build the Java library and executable.
+
+### 1. Install Leiningen
+
+Leiningen installs itself on the first run of the `lein` shell script; there is no
+separate install script.  Follow these instructions to install Leiningen manually:
+
+1. Make sure you have Java installed; OpenJDK version 8 is recommended at this time.
+2. [Download the `lein` script from the `stable` branch](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein)
+ of this project.
+3. Place it on your `$PATH`. (`~/bin` is a good choice if it is on your path.)
+4. Set it to be executable. (`chmod +x ~/bin/lein`)
+5. Run it.
+
+Windows users can use the above script in the Linux subsystem or try
+[the batch file](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein.bat) or
+[Powershell version](https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein.ps1)
+instead.
+
+### 2. Clone the repo
+
+```bash
+git clone https://github.com/KardungLa/StoReCo.git
+```
+
+```bash
+cd StoReCo/storeco
+lein uberjar
+cd target/uberjar
+```
 
 ## Usage
 
 ### How to use StoReCo
 <pre>
-java -jar storeco-0.2.0-SNAPSHOT-standalone.jar
+java -jar storeco-0.4.0-standalone.jar
 </pre>
 
 <pre>
@@ -21,18 +50,18 @@ StoReCo
   Usage: storeco [options]
 
   Options:
-  -h, --help
+  -h, --help           Displays this help
   -c, --config PATH    EDN file to read config options from
-  -i, --input INPUT
-  -o, --output OUTPUT
-  -f, --format FORMAT  (turtle)
-  -r, --root-ns ROOT   https://storeco.org/text/
+  -i, --input INPUT    Absolute path to input file
+  -o, --output OUTPUT  Relative path to output file
+  -f, --format FORMAT  TURTLE, NTRIPLES, NT, JSONLD, RDFXML, N3, RDFJSON
+  -r, --root-ns ROOT   https://storeco.io/text/
   -w, --root-id ID     ALL
 </pre>
 
 ### Example
 <pre>
-java -jar storeco-0.2.0-SNAPSHOT-standalone.jar -i AZW.tei.xml -o AZW.ttl -f turtle -r https://storeco.org/text/ -w AZW
+java -jar storeco-0.4.0-standalone.jar -i AZW.tei.xml -o AZW.ttl -f turtle -r https://storeco.io/text/ -w AZW
 </pre>
 
 ## Credits

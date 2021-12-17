@@ -13,7 +13,7 @@
 ;; This Source Code may also be made available under the following Secondary Licenses when the conditions for such availability set forth in the Eclipse Public License, v. 2.0 are satisfied: GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version, with the GNU Classpath Exception which is available at https://www.gnu.org/software/classpath/license.html.
 ;;
 
-(ns at.danielschlager.storeco.api
+(ns io.storeco.api
   "StoReCo API"
   (:gen-class)
   (:require [clojure.data.xml :as xml]
@@ -37,6 +37,7 @@
 (rdf/register-rdf-ns :dhplus "https://dh.plus.ac.at/ontologies#")
 (rdf/register-rdf-ns :dhplusi "https://dh.plus.ac.at/instance/")
 (rdf/register-rdf-ns :ldp "http://www.w3.org/ns/ldp#")
+(rdf/register-rdf-ns :oa "http://www.w3.org/ns/oa#")
 
 (defn uuid [] (.toString (java.util.UUID/randomUUID)))
 
@@ -45,13 +46,19 @@
 
 (def root-ns (atom ""))
 (def root-id (atom ""))
-(defn werk-ns [] (str @root-ns @root-id "#"))
+(defn s-ns [] (str @root-ns @root-id "#"))
 
 (def parent nil)
 (def i 0)
 (def stack (atom ()))
 (def istack (atom ()))
 (def entries (atom ()))
+
+; Annotations
+; https://www.w3.org/TR/annotation-vocab/)
+(def annotations (atom ()))
+(def ^:dynamic *annotations-model* (rdf/defmodel))
+(defn a-ns [] (str @root-ns @root-id "/annotation/"))
 
 ; Helper Methods for mutable data
 ; Because of the design of the Jena Model, we can't use immutable data
@@ -188,86 +195,99 @@
   (:tag element))
 
 ; @todo
-(defn rdf->xml
-  "Creates a XML of RDF"
-  []
-  (let [d (rdf/document->model (io/input-stream "Test.ttl") :turtle)
-        query-str "SELECT * WHERE {
-  ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?tag .
-  ?s <https://dh.plus.ac.at/ontologies#i> ?i .
-  ?s <https://dh.plus.ac.at/ontologies#elementName> ?elementName .
-  ?s <https://dh.plus.ac.at/ontologies#hasContent> ?hasContent .
-  } ORDER BY ASC(?i)"
-        query (rdf/query-triples d query-str)]
-   (for [q query] (if-not (nil? q)
-    (println (count (rdf/walk-triples query (fn [s p o] [s p o]))))
-    ))))
+; (defn rdf->xml
+;  "Creates a XML of RDF"
+;  []
+;  (let [d (rdf/document->model (io/input-stream "Test.ttl") :turtle)
+;        query-str "SELECT * WHERE {
+;  ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?tag .
+;  ?s <https://storeco.io/ontologies#i> ?i .
+;  ?s <https://storeco.io/ontologies#elementName> ?elementName .
+;  ?s <https://storeco.io/ontologies#hasContent> ?hasContent .
+;  } ORDER BY ASC(?i)"
+;        query (rdf/query-triples d query-str)]
+;   (for [q query] (if-not (nil? q)
+;    (println (count (rdf/walk-triples query (fn [s p o] [s p o]))))
+;    ))))
 
 (defn parse-string
   "Parse String"
   [element]
-  (let [tr-id (keyword uuid)]
+  (let [tr-id (keyword (uuid))]
     (add-entry tr-id)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :i]
                     (increment-i)]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:rdf :type]
                     [:dhplus :contentTag]]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :hasContent]
                     (get-content element)]] *model*)))
 
 (defn parse-map-attrs
-  "Parse Map"
+  "Parse Map and build web annotation"
   [element]
     (if (> (count (:attrs element)) 0)
       (doseq [[k v] (:attrs element)]
         (let [nid (keyword (str (get-id element) "/" (name k)))
-              tr-id (keyword uuid)]
-        (add-to-model [[[(werk-ns) tr-id]
+              tr-id (keyword (uuid))
+              a-id (keyword (uuid))
+              ]
+        (add-to-model [[[(s-ns) tr-id]
                         [:dhplus :attrs]
-                        [(werk-ns) nid]]] *model*)
-        (add-to-model [[[(werk-ns) nid]
+                        [(s-ns) nid]]] *model*)
+        (add-to-model [[[(s-ns) nid]
                         [:dhplus :attrName]
                         (name k)]] *model*)
-        (add-to-model [[[(werk-ns) nid]
+        (add-to-model [[[(s-ns) nid]
                         [:dhplus :attrValue]
-                        v]] *model*)))
+                        v]] *model*)
+        ; Web Annotation
+        (add-to-model [[[(a-ns) a-id]
+                        [:rdf :type]
+                        [:oa :Annotation]]] *annotations-model*)
+        (add-to-model [[[(a-ns) a-id]
+                        [:oa :hasBody]
+                        [(s-ns) nid]]] *annotations-model*)
+        (add-to-model [[[(a-ns) a-id]
+                        [:oa :hasTarget]
+                        [(a-ns) tr-id]]] *annotations-model*)
+        ))
       nil
       ))
 
-(defn parse-map-content
-  "Parse Map Content"
+(defn closing-tag
+  "Closing Tag"
   [element]
-  (let [tr-id (keyword uuid)]
+  (let [tr-id (keyword (uuid))]
     (add-entry tr-id)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :i]
                     (increment-i)]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:rdf :type]
                     [:dhplus :endTag]]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :elementName]
                     [:tei (name (pop-head! stack))]]] *model*)))
 
 (defn parse-map
   "Parse Map"
   [element]
-    (let [tr-id (keyword (get-id element))]
+  (let [tr-id (keyword (get-id element))]
     (add-entry tr-id)
     (push-head! (get-tag element))
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :i]
                     (increment-i)]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:rdf :type]
                     [:dhplus :startTag]]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :elementName]
                     [:tei (name (get-tag element))]]] *model*)
-    (add-to-model [[[(werk-ns) tr-id]
+    (add-to-model [[[(s-ns) tr-id]
                     [:dhplus :hasContent]
                     (get-content element)]] *model*)))
 
@@ -275,29 +295,40 @@
   "Create RDF triples for every XML, preserving all attributes and add incremental counter value to every group of triples"
   [element]
   (cond
+    ; Create a content tag for a single string
     (string? element) (parse-string element)
-    (sequential? element) (let [c (count element)]
+    ;
+    (sequential? element) (let [c (count element)
+                                el (first (rest element))]
                             (cond
-                              (= c 1) (do
-                                        (xml->rdf (first element)))
-                              (> c 1) (do
-                                        (if (string? (first (rest element)))
+                              (= c 1) (xml->rdf (first element))
+                              (> c 1) (if (string? el)
+                                        ; parse string
+                                        (xml->rdf el)
+                                        ; else: has more childs
+                                        (do
+                                          ; Recursivly parse the first element
                                           (xml->rdf (first (rest element)))
-                                          (do (xml->rdf (first (rest element)))
+                                          ; Check if there are more elements (childs)
                                               (if (> (count (rest (rest element))) 1)
-                                                (do
                                                   (doseq [el (rest (rest element))]
-                                                    (xml->rdf el)))))))))
+                                                    (xml->rdf el)) ())))))
     (map? element) (do (parse-map element)
-                       (if (:attrs element) (parse-map-attrs element))
-                       (if-not (string? (:content element)) (do (xml->rdf (:content element))
-                                                                (parse-map-content element)
-                                                                (if (instance? clojure.data.xml.node.Element (last (:content element))) () (xml->rdf (last (:content element)))))))
+                       (if (:attrs element)
+                         ; Parse element attributes and build web annotation
+                         (parse-map-attrs element) ())
+                       (if-not (string? (:content element)) (do
+                                                              ; Recursivly parse content
+                                                              (xml->rdf (:content element))
+                                                              ; Closing Tag
+                                                              (closing-tag element)
+                                                              ; Recursivly parse elements
+                                                              (if (instance? clojure.data.xml.node.Element (last (:content element))) () (xml->rdf (last (:content element)))))))
     :else (prn element)))
 
 (defn append-rdf-header []
-  (rdf/with-model *model* (rdf/model-add-triples (rdf/make-triples [[[@root-ns (keyword root-id)] [:rdf :type] [:dhplus :werk]]])))
-  (doseq [e @entries] (rdf/with-model *model* (rdf/model-add-triples (rdf/make-triples [[[@root-ns (keyword root-id)] [:dhplus :entry] [(werk-ns) e]]])))))
+  (rdf/with-model *model* (rdf/model-add-triples (rdf/make-triples [[[(s-ns)] [:rdf :type] [:dhplus :werk]]])))
+  (doseq [e @entries] (rdf/with-model *model* (rdf/model-add-triples (rdf/make-triples [[[(s-ns)] [:dhplus :entry] [(s-ns) e]]])))))
 
 (defn build-from-string
   "Build RDF from XML String and return"

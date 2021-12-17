@@ -13,11 +13,11 @@
 ;; This Source Code may also be made available under the following Secondary Licenses when the conditions for such availability set forth in the Eclipse Public License, v. 2.0 are satisfied: GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version, with the GNU Classpath Exception which is available at https://www.gnu.org/software/classpath/license.html.
 ;;
 
-(ns at.danielschlager.storeco.core
+(ns io.storeco.core
   "StoReCo CLI"
   (:gen-class)
   (:require
-   [at.danielschlager.storeco.api :as api]
+   [io.storeco.api :as api]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -29,7 +29,7 @@
    ["-i" "--input INPUT" :parse-fn #(java.io.File. %) :validate [#(.exists %) "file must exist"]]
    ["-o" "--output OUTPUT"]
    ["-f" "--format FORMAT" "(turtle)"]
-   ["-r" "--root-ns ROOT" "https://storeco.org/text/"]
+   ["-r" "--root-ns ROOT" "https://storeco.io/text/"]
    ["-w" "--root-id ID" "ALL"]
    ]
   )
